@@ -1,11 +1,11 @@
-# OpenALEX Collector v5.0
+# OpenALEX Collector v6.0 — English Edition
 
-OpenALEX Collector v5.0 is a single-file HTML tool for collecting and analyzing scholarly paper metadata through the OpenAlex API. It supports paper search, topic analysis, funding analysis, citation analysis, collaboration analysis, coauthorship networks, and reference-network analysis directly in the browser. No server is required; open `OpenALEX_Collector_EN.html` in a modern browser.
+OpenALEX Collector v6.0 is a single-file, browser-based tool for collecting and analyzing scholarly paper metadata with the OpenAlex API. It supports paper retrieval, command-line style search expressions, author and institution disambiguation, citation analysis, funding intelligence, Topic intelligence, collaboration/co-authorship networks, and reference/citation-network analysis.
 
 > Every paper stands on someone's shoulders.
 
 ![Powered by OpenAlex API](https://img.shields.io/badge/Powered%20by-OpenAlex%20API-1a73e8)
-![Version](https://img.shields.io/badge/version-v5.0-1a73e8)
+![Version](https://img.shields.io/badge/version-v6.0-1a73e8)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
@@ -13,442 +13,335 @@ OpenALEX Collector v5.0 is a single-file HTML tool for collecting and analyzing 
 ## Table of contents
 
 - [Overview](#overview)
-- [Design principles](#design-principles)
-- [Main features](#main-features)
+- [What is included in v6.0](#what-is-included-in-v60)
 - [Quick start](#quick-start)
-- [Overall workflow](#overall-workflow)
+- [Typical workflow](#typical-workflow)
 - [Modules](#modules)
-  - [1. Search form](#1-search-form)
-  - [2. Data table](#2-data-table)
-  - [3. Count charts](#3-count-charts)
-  - [4. Citation rankings](#4-citation-rankings)
-  - [5. Collaboration network, institution aggregation](#5-collaboration-network-institution-aggregation)
-  - [6. Funding Intelligence](#6-funding-intelligence)
-  - [7. Topic Intelligence](#7-topic-intelligence)
-  - [8. Network graphs, collaboration and coauthorship](#8-network-graphs-collaboration-and-coauthorship)
-  - [9. Citation network, references](#9-citation-network-references)
-  - [10. Detail popups](#10-detail-popups)
-  - [11. Export and import](#11-export-and-import)
+  - [1. Paper Search](#1-paper-search)
+  - [2. Paper Data](#2-paper-data)
+  - [3. Author / Institution Disambiguation](#3-author--institution-disambiguation)
+  - [4. Charts](#4-charts)
+  - [5. Citation Ranking](#5-citation-ranking)
+  - [6. Collaboration Network by Institution](#6-collaboration-network-by-institution)
+  - [7. Funding Intelligence](#7-funding-intelligence)
+  - [8. Topic Intelligence](#8-topic-intelligence)
+  - [9. Network Map: Collaboration / Co-authorship](#9-network-map-collaboration--co-authorship)
+  - [10. Citation Network: References](#10-citation-network-references)
+  - [11. Detail popups](#11-detail-popups)
+  - [12. Export / import](#12-export--import)
+- [Command-line query syntax](#command-line-query-syntax)
+- [Disambiguation-map JSON format](#disambiguation-map-json-format)
 - [Topic score definition](#topic-score-definition)
-- [Network metric definitions](#network-metric-definitions)
-- [CSV output columns](#csv-output-columns)
-- [Search syntax](#search-syntax)
-- [Use-case guide](#use-case-guide)
-- [Technical specifications](#technical-specifications)
-- [Notes](#notes)
+- [Network metrics](#network-metrics)
+- [CSV output](#csv-output)
+- [External APIs](#external-apis)
 - [Troubleshooting](#troubleshooting)
+- [Notes and limitations](#notes-and-limitations)
 - [License](#license)
 
 ---
 
 ## Overview
 
-**OpenALEX Collector v5.0** starts from OpenAlex paper metadata and helps users understand the structure of a research area from multiple angles.
+OpenALEX Collector v6.0 helps analysts understand the structure of a research field from multiple perspectives:
 
-It is designed to answer questions such as:
+- whether a field is growing or declining;
+- which Topics are expanding;
+- which papers, authors, institutions, journals, and references are influential;
+- whether homonymous authors or institution-name variants are distorting rankings and networks;
+- which institutions and authors collaborate with each other;
+- which funders and award numbers are linked to which Topics, authors, and institutions;
+- which references act as foundational works, shared intellectual bases, or internal citation hubs.
 
-- Is this research area growing?
-- Which Topics are increasing?
-- Which papers, authors, institutions, and journals have influence?
-- Which institutions collaborate with each other?
-- Which authors coauthor with each other?
-- Which funders and award IDs are linked to which Topics or institutions?
-- Which references are foundational works, common foundations, or internal citation hubs?
-
-In addition to the v4.0 search, citation, collaboration, funding, Topic, and network-analysis functions, v5.0 adds **command-line search expressions**. Search conditions can be defined as numbered command rows such as `#01`, `#02`, and then combined as a final logical expression such as `T=(#01 AND #02) OR #03`. OpenAlex is used to retrieve a broad candidate set, and Collector then performs internal Boolean, wildcard, and `nearN` / `adjN` proximity evaluation for titles and abstracts.
+The tool runs as a local HTML file. No server setup is required. Open `OpenALEX_Collector_en.html` in a modern browser and start searching.
 
 ---
 
-## Design principles
+## What is included in v6.0
 
-| Principle | Description |
-|---|---|
-| OpenAlex-centered | Paper population formation, Topics, references, institutions, authors, and funding information are centered on OpenAlex. |
-| No Semantic Scholar dependency | Semantic Scholar is not used in v5.0. The tool is designed around OpenAlex to avoid large-scale retrieval constraints. |
-| No API key field | v5.0 does not implement an OpenAlex API key input field. |
-| Registration-free external APIs only | External enrichment is limited to the Crossref REST API and NIH RePORTER API. |
-| Single-file HTML | No server is required. The tool runs in a browser. |
-| English GUI | Interface labels and help text are provided in English. |
-| CSV reuse | Previously downloaded CSV files can be reloaded to continue analysis without re-running the search. |
+v6.0 keeps the core design of the Japanese v6.0 build and provides an English UI while preserving the same functionality.
 
----
+### Core functions
 
-## Main features
-
-| Category | Feature | Description |
+| Area | Function | Description |
 |---|---|---|
-| Paper collection | OpenAlex search | Search by keywords, institution, author, year range, publication type, search scope, open access, abstract availability, English-only filter, and more. |
-| Paper collection | Command-line search expression | Supports numbered command rows such as `#01` and a combined expression such as `T=(#01 AND #02) OR #03`. Each row can use `TI` / `AB` / `TA` / `TX` / `FT`, `nearN` / `adjN`, Boolean logic, phrases, and wildcards. |
-| Basic visualization | Count trends | Yearly paper counts, CAGR, trend label, author comparison, author ranking, and institution ranking. |
-| Citation analysis | Citation rankings | Most-cited papers, authors, institutions, journals, count x average citation scatter, and h-index. |
-| Collaboration analysis | Institution pair analysis | Collaboration pair ranking, ego network, collaboration breadth, pair time series, and collaboration matrix. |
-| Funding analysis | Funding Intelligence | Funder ranking, funder x year, award ID ranking, funder x institution, funder x institution matrix, and external enrichment. |
-| Topic analysis | Topic Intelligence | Topic ranking, Topic x year, emerging Topic candidates, Topic x institution, Topic x funder, and multiple matrix views. |
-| Network graphs | Institution and author networks | vis-network-based institution and author networks with multiple node color and size metrics. |
-| Citation network | Reference analysis | Top-N cited references, co-citation, bibliographic coupling, and internal citation network. |
-| Detail display | Modal popups | Click bars, points, cells, nodes, or edges to view details. Paper lists include authors, institutions, and Topics. |
-| Output | CSV / PNG | Supports paper CSV, chart CSV, matrix CSV, network node/edge CSV, and PNG export for Chart.js charts. |
+| Paper retrieval | OpenAlex search | Search by keywords, institution, author, publication year, paper type, open access, citation threshold, abstract availability, and language. |
+| Search syntax | Command-line query mode | Use numbered command rows such as `#01`, `#02`, then combine them with `T=(#01 AND #02) OR #03`. Supports `TI`, `AB`, `TA`, `TX`, `FT`, Boolean logic, `nearN`, `adjN`, and wildcards. |
+| Disambiguation | Author disambiguation | Uses OpenAlex Author ID and ORCID when available. Homonymous authors are separated by ID and can be manually merged in the workbench. |
+| Disambiguation | Institution disambiguation | Uses OpenAlex Institution ID, ROR, and lineage when available. Supports exact-ID aggregation, parent-institution grouping, and user-defined merge maps. |
+| Analytics | Charts | Yearly counts, CAGR, trend charts, author comparison, author ranking, and institution ranking. |
+| Citations | Citation ranking | Highly cited papers, author citation ranking, institution citation ranking, journal ranking, quantity × quality scatter, and h-index ranking. |
+| Collaboration | Institution collaboration | Institution-pair analysis, ego networks, breadth of collaboration, pair time series, and collaboration matrices. |
+| Funding | Funding Intelligence | Funder rankings, funder × year analysis, award-number ranking, funder × institution, funder × author, and matrix exports. |
+| Topics | Topic Intelligence | Topic ranking, Topic × year, emerging Topic candidates, Topic × institution, Topic × author, Topic × funder, and matrices. |
+| Networks | Collaboration / co-authorship network map | Interactive vis-network graphs for institutions and authors. Nodes and edges can be clicked to show paper lists and metrics in popups. |
+| References | Citation network | Top referenced works, co-citation, bibliographic coupling, and internal citation-network analysis. |
+| Output | CSV / PNG / JSON | Export papers, charts, matrices, network nodes/edges, and identity maps. Import previously saved CSV files. |
+
+### v6.0-specific improvements
+
+- Author and institution identity resolution is integrated into the analytical pipeline.
+- GUI-based merge and unmerge operations are stored as an identity map and immediately reapplied to analyses.
+- The identity workbench clearly shows merged records, merged source keys, and merge targets.
+- The identity workbench caches parsed author/institution entities, profile aggregations, diagnostics, and display-label maps; bulk merges are saved to localStorage in one batch, and heavier chart, Funding, Topic, and network redraws are deferred after the immediate workbench update.
+- The identity workbench includes name-based sorting, same-name-first sorting, reverse-name sorting, and metric sorting by paper count, citation count, average citation count, or h-index, so same-name authors and institutions can be reviewed next to each other.
+- Network-map labels hide raw OpenAlex IDs in the visible names while preserving IDs internally and in CSV exports.
+- Network-map nodes and edges open detail popups, including related papers, metrics, and collaboration/co-authorship context.
+- Topic Intelligence includes an Author × Topic matrix.
+- Funding Intelligence includes Funder × Author analysis and Funder × Author matrix output.
+- The Network Map card icon is `＊`.
+- The version label remains `v6.0`.
 
 ---
 
 ## Quick start
 
 ```bash
-# 1. Open the HTML file in a browser
-open OpenALEX_Collector_EN.html
+# 1. Open the HTML file in your browser.
+open OpenALEX_Collector_en.html
 
-# 2. Enter command rows and the combined logical expression T
-# Example command row:
-# TA=((sulfide OR oxide OR polymer) near5 electrolyte)
+# 2. Enter command lines and a T expression.
+# Example:
+# #01  TA=((sulfide OR oxide OR polymer) near5 electrolyte)
+# T=(#01)
 
-# 3. Click "Run search"
+# 3. Optionally set institution filters, author filters, year range, and advanced filters.
 
-# 4. Review the results and use "Render" buttons in each analysis card
+# 4. Click "Run search".
 
-# 5. Download CSV / PNG outputs as needed
+# 5. Review results in Paper Data.
+
+# 6. Open Author / Institution Disambiguation and, when needed, merge or unmerge keys.
+
+# 7. Render charts, funding analysis, Topic analysis, network maps, and citation networks.
+
+# 8. Export CSV, PNG, or identity-map JSON as needed.
 ```
 
-Supported browsers include Chrome, Edge, Firefox, Safari, and other modern browsers.
+Recommended browsers: Chrome, Edge, Firefox, or Safari.
 
 ---
 
-## Overall workflow
+## Typical workflow
 
 ```text
-Specify search conditions
-  ↓
-Retrieve the paper set from OpenAlex
-  ↓
-Review the data table
-  ↓
-Visualize counts, citations, collaboration, Topics, funding, and references
-  ↓
-Click chart, matrix, and network elements to inspect details
-  ↓
-Export CSV / PNG
-  ↓
-Reload CSV later if needed and continue analysis
+Define search conditions
+  -> Retrieve papers from OpenAlex
+  -> Keep author IDs, ORCIDs, institution IDs, RORs, and lineage metadata
+  -> Apply the disambiguation map
+  -> Inspect authors and institutions in the disambiguation workbench
+  -> Merge or unmerge keys where needed
+  -> Review the paper table
+  -> Render charts, citation rankings, collaboration analysis, Topic analysis, funding analysis, and networks
+  -> Export CSV / PNG / JSON
+  -> Re-import saved CSV and the identity map for continued analysis
 ```
 
 ---
 
 ## Modules
 
-### 1. Search form
+### 1. Paper Search
 
-The search form sets conditions for the OpenAlex API. It is also possible to leave the keyword field empty and search only with institution or author filters.
+The search form defines the OpenAlex query and the post-retrieval filtering rules.
 
 | Input | Description | Example |
 |---|---|---|
-| Command row | One condition per row. Each row must explicitly use `TI=` / `AB=` / `TA=` / `TX=` / `FT=`. | `#01  TI=(solid adj3 electrolyte)` |
-| Combined logical expression T | References command rows as `#01`, `#02` and combines them with `AND` / `OR` / `NOT`. | `T=(#01 AND #02) OR #03` |
-| Institution filter | Semicolon-separated institution names are OR-searched. | `Meijo University; MIT` |
-| Author filter | Semicolon-separated author names are AND-searched. | `Akira Yoshino; John Goodenough` |
-| Year range | Start year and end year. | `2020` to `2026` |
-| Retrieval limit | Number of records per query or per year. | `200`, `10000` |
-| Fetch by year | Retrieves records year by year to support result sets above 10,000 records. | ON/OFF |
+| Command row | One condition per row. Each row must specify `TI=`, `AB=`, `TA=`, `TX=`, or `FT=`. | `TI=(solid adj3 electrolyte)` |
+| T expression | Combines command rows by `#01`, `#02`, etc. | `T=(#01 AND #02) OR #03` |
+| Institution filter | Semicolon-separated institution names or OpenAlex Institution IDs. Values are ORed. | `Meijo University; I136199984` |
+| Author filter | Semicolon-separated author names or OpenAlex Author IDs. Values are ANDed. | `Akira Yoshino; A123456789` |
+| Year range | Publication-year start and end. | `2020` to `2026` |
+| Maximum records | Maximum number of records per query or per year. | `200`, `10000` |
+| Fetch by year | Splits retrieval by year, useful for large fields. | On / Off |
 
-Advanced filters include publication type, sort order, minimum citations, open-access-only, abstract-only, and English-language-only options.
+In command-line query mode, the Advanced Filters "Search scope" control is disabled because each command row defines its field explicitly. In standard OpenAlex search mode, the search terms are sent directly to OpenAlex and the Advanced Filters search scope is active.
 
-In command-line search-expression mode, each command row explicitly defines the search scope. Therefore the Advanced Filter **Search scope** control is grayed out and is not used for internal evaluation. It is enabled only in Standard OpenAlex search mode. In Standard OpenAlex search mode, the command-line-only settings **Maximum width within proximity groups** and **OR split limit** are hidden.
+### 2. Paper Data
 
-### 2. Data table
-
-The retrieved papers are displayed in a sortable table.
+The Paper Data table shows the retrieved papers.
 
 | Function | Description |
 |---|---|
-| Columns | Title, year, authors, institutions, journal, citation count, DOI, and Collector match information. |
-| Sorting | Click column headers to switch ascending / descending order. |
-| Pagination | Displays records in pages. |
-| DOI links | Papers with DOI values link to `doi.org`. |
-| CSV output | Exports paper data with v5.0 extended columns. |
+| Columns | Title, year, authors, institutions, venue, citations, search match, and DOI. |
+| Sorting | Click a column header to sort ascending or descending. |
+| Pagination | Results are shown in pages of 50 records. |
+| DOI links | DOI values link to `doi.org`. |
+| CSV export | Exports the paper table with v6.0 identity and reference columns. |
 
-### 3. Count charts
+Displayed author and institution names use the current disambiguation map. Original names and IDs are retained in CSV columns.
 
-This basic chart card shows the quantitative trend of the research area.
+### 3. Author / Institution Disambiguation
 
-| Tab | Description | Click behavior |
-|---|---|---|
-| Count trend, bar chart | Yearly paper counts. | Click a year to open the paper list for that year. |
-| Count trend, line chart | Overall trend or author comparison. | Click a point to open the corresponding paper list. |
-| Author ranking | Authors ranked by paper count. | Opens author details. |
-| Institution ranking | Institutions ranked by paper count. | Opens institution details. |
+The disambiguation module is a core feature of v6.0. It uses structured entities from OpenAlex and applies a user-editable merge map before analytical aggregation.
 
-### 4. Citation rankings
+| Target | Primary key | Auxiliary key | Purpose |
+|---|---|---|---|
+| Author | OpenAlex Author ID | ORCID, normalized name | Separate homonymous authors and allow controlled manual merging. |
+| Institution | OpenAlex Institution ID | ROR, lineage, normalized name | Control name variants, same-name institutions, parent-child grouping, and organizational groups. |
 
-This card analyzes impact based on citations, not only paper volume.
+The workbench supports:
 
-| Tab | Description |
-|---|---|
-| Most-cited papers Top-N | Ranks individual papers by citation count. |
-| Most-cited authors Top-N | Ranks authors by total citation count in the current collection. |
-| Most-cited institutions Top-N | Ranks institutions by total citation count in the current collection. |
-| Most-cited journals Top-N | Shows influential journals or venues. |
-| Count x average citations | X = paper count, Y = average citations, bubble = total citations. |
-| h-index Top-N | Computes h-index within the current collection. |
+- switching between author and institution targets;
+- filters for all keys, same-name/multiple-key candidates, name-only records, and merged records;
+- text filtering by name, ID, ROR, Topic, co-author, or collaborator, with debounced redraws while typing;
+- sorting by `Name A–Z (same names adjacent)`, `Same-name candidates first → name`, `Name Z–A`, paper count, citation count, average citation count, or h-index;
+- detail popups showing papers, citations, h-index, source keys, display names, partners, Topics, and top papers;
+- same-name candidate comparison;
+- merging one key into another;
+- merging checked keys, where the first checked key in display order becomes the merge target;
+- undoing a merge;
+- exporting and importing the identity map as JSON;
+- clearing the identity map.
 
-The h-index is calculated only from papers included in the current collection. It is not the OpenAlex-wide h-index for the author or institution.
+Merged records are explicitly marked in the workbench. Merged source keys and merge targets are shown so that users can verify what was merged.
 
-### 5. Collaboration network, institution aggregation
+The detail popup buttons pass author and institution keys safely through HTML click handlers, so keys containing punctuation or URL-derived characters can still open the merge/detail view reliably. Manual key-entry merging is not exposed; merge and split actions are performed from the list, detail popups, and checked-row merge workflow.
 
-Institutional collaboration is aggregated from papers. If a paper includes institutions A, B, and C, the pairs A x B, A x C, and B x C are counted.
+Internally, the workbench avoids repeated JSON parsing and repeated profile aggregation by caching parsed entities, canonical profiles, label maps, and diagnostics. When the merge map or institution aggregation mode changes, the relevant caches are invalidated and rebuilt. Filter input is debounced while typing. Bulk merge operations write the merge map once after all selected rules have been created. After merge or split operations, the table, diagnostics, workbench, and rule list update first, while heavier Chart, Funding, Topic, and Network redraws are deferred to browser idle time where available. These changes reduce overhead on large collections without changing the v6.0 feature set.
 
-| Tab | Description |
-|---|---|
-| Collaboration pair Top-N | Ranks institution pairs by coauthored paper count. |
-| Ego network | Selects one central institution and shows its collaborators. |
-| Collaboration breadth | Shows the number of unique collaborators for each institution. |
-| Pair time series | Shows yearly coauthored-paper counts for top pairs. |
-| Collaboration matrix | Heatmap for top institutions x top institutions. |
+### 4. Charts
 
-The collaboration matrix is an HTML table heatmap. It is exported as CSV rather than PNG.
-
-### 6. Funding Intelligence
-
-Funding Intelligence aggregates funding agencies, funders, award IDs, and their relationships with papers and institutions based primarily on OpenAlex funding information.
-
-| Tab | Description | Main use |
-|---|---|---|
-| A. Funder ranking | Paper count, total citations, average citations, and number of award IDs by funder. | Identify major funders. |
-| B. Funder x year | Yearly supported-paper counts for major funders. | Track funding trends over time. |
-| C. Award ID ranking | Paper and citation counts by award ID / grant number. | Identify important grant programs or awards. |
-| D. Funder x institution | Bar chart for funder-institution pairs. | See which funders are linked to which institutions. |
-| E. Funder x institution matrix | Heatmap with funders as rows and institutions as columns. | Overview of funder-institution relationships. |
-| F. External enrichment | Enrich funding data through Crossref / NIH RePORTER. | Add DOI-based and NIH award information. |
-
-#### Funder x institution matrix
-
-- Rows: funders
-- Columns: institutions
-- Cell value: number of matching papers
-- Color: darker blue indicates more papers
-- Cell click: opens the corresponding paper list
-- CSV output: matrix-format CSV
-
-#### External enrichment
-
-Only registration-free APIs are used.
-
-| API | Use |
-|---|---|
-| Crossref REST API | Enrich funder / award metadata by DOI. |
-| NIH RePORTER API | Enrich NIH-style award numbers with project number, fiscal year, amount, PI, organization, and project title. |
-
-Direct API integration for KAKEN / JST / AMED is not included as a standard feature in v5.0 because the standard tool is limited to registration-free APIs.
-
-### 7. Topic Intelligence
-
-Topic Intelligence uses OpenAlex `primary_topic` and `topics` metadata to analyze research themes and changes.
-
-| Tab | Description | Main use |
-|---|---|---|
-| A. Topic ranking | Paper count, total citations, and average citations by Topic. | Identify major themes. |
-| B. Topic x year | Yearly trend lines for top Topics. | Check growth or stagnation. |
-| C. Emerging Topic candidates | Scores Topics by recent count, growth, and recent citation impact. | Explore growing themes. |
-| D. Topic x institution | Bar chart for Topic-institution pairs. | Identify institutional strengths. |
-| E. Topic x funder | Bar chart for Topic-funder pairs. | See where funding is directed. |
-| F. Topic x year matrix | Heatmap with Topics as rows and years as columns. | Overview of thematic trends. |
-| G. Topic x institution matrix | Heatmap with Topics as rows and institutions as columns. | Compare themes and players. |
-| H. Topic x funder matrix | Heatmap with Topics as rows and funders as columns. | Compare themes and funding allocation. |
-
-Clicking a matrix cell opens the corresponding paper list.
-
-### 8. Network graphs, collaboration and coauthorship
-
-vis-network is used to draw institution and author networks.
+The Charts card provides basic trend and ranking views.
 
 | Tab | Description |
 |---|---|
-| A. Institution network | Collaboration network among institutions. |
-| B. Author network | Coauthorship network among authors. |
+| Yearly count | Annual publication counts. |
+| Trend line | Total or author-specific time series. |
+| Author ranking | Top authors by paper count. |
+| Institution ranking | Top institutions by paper count. |
 
-#### Filters
+Clicking bars or line points opens a paper-list popup.
 
-| Filter | Description |
+### 5. Citation Ranking
+
+Citation Ranking analyzes influence within the retrieved collection.
+
+| Tab | Description |
 |---|---|
-| Number of nodes | Number of top nodes to show. |
-| Minimum edge weight | Minimum number of collaborations or coauthored papers required for an edge. |
-| Minimum papers | Minimum number of papers required for a node. |
-| Minimum average citations | Minimum average citation count required for a node. |
-| Start year / End year | Year range for network construction. |
-| Topic filter | Keep only papers whose Topic name contains the specified text. |
-| Funder filter | Keep only papers whose funder name contains the specified text. |
+| Highly cited papers | Papers ranked by citation count. |
+| Author citations | Author-level citation aggregation. |
+| Institution citations | Institution-level citation aggregation. |
+| Venue ranking | Venue-level aggregation. |
+| Quantity × quality | Paper count versus average citations. |
+| h-index ranking | h-index by author or institution within the collection. |
 
-#### Node size and color
+All author and institution aggregations use the current disambiguation map.
 
-Node size and node color can be switched among:
+### 6. Collaboration Network by Institution
 
-- Betweenness centrality
-- Degree
-- Weighted degree
-- Paper count
-- Average citations
+This module analyzes collaboration among institutions.
 
-Click a node to open details for that author or institution. Click an edge to open the coauthored or collaborative papers for that pair.
+| Tab | Description |
+|---|---|
+| Institution pairs | Collaboration pairs ranked by co-authored paper count. |
+| Ego network | Collaboration partners for a selected institution. |
+| Collaboration breadth | Number and strength of collaboration partners. |
+| Pair time series | Annual trend for a selected institution pair. |
+| Collaboration matrix | Heatmap-style institution × institution matrix. |
 
-### 9. Citation network, references
+### 7. Funding Intelligence
 
-The citation-network card uses each paper's `referenced_works` to analyze reference structure.
+Funding Intelligence aggregates funding metadata from OpenAlex and optional enrichment sources.
 
-| Tab | Description | Main use |
+| Tab | Description |
+|---|---|
+| Funder ranking | Top funders by paper count. |
+| Funder × year | Time series by funder. |
+| Award-number ranking | Frequent award IDs and grants. |
+| Funder × institution | Links between funders and institutions. |
+| Funder × institution matrix | Matrix export and heatmap-style view. |
+| Funder × author | Links between funders and authors. |
+| Funder × author matrix | Matrix export and heatmap-style view. |
+
+Optional enrichment uses public APIs that do not require registration. External lookups may be limited by API availability and CORS behavior.
+
+### 8. Topic Intelligence
+
+Topic Intelligence uses OpenAlex Topic metadata to analyze research structure.
+
+| Tab | Description |
+|---|---|
+| Topic ranking | Top Topics by paper count. |
+| Topic × year | Annual Topic trends. |
+| Emerging Topics | Simple-score ranking for recent growth and citation impact. |
+| Topic × institution | Links between Topics and institutions. |
+| Topic × author | Links between Topics and authors. |
+| Topic × funder | Links between Topics and funders. |
+| Topic × year matrix | Matrix export and heatmap-style view. |
+| Topic × institution matrix | Matrix export and heatmap-style view. |
+| Author × Topic matrix | Matrix export and heatmap-style view. |
+| Funder × Topic matrix | Matrix export and heatmap-style view. |
+
+All institution and author aggregations use the current disambiguation map.
+
+### 9. Network Map: Collaboration / Co-authorship
+
+The Network Map card draws interactive networks using vis-network.
+
+| Network | Nodes | Edges |
 |---|---|---|
-| A. Cited references Top-N | External papers most frequently cited by the collection. | Identify foundational or classic references. |
-| B. Co-citation pairs Top-N | Pairs of references cited together in the same collection paper. | Identify schools, theoretical frameworks, or shared foundations. |
-| C. Bibliographic coupling Top-N | Pairs of collection papers with many shared references. | Identify closely related papers or subthemes. |
-| D. Internal citation network | Citation relationships among papers in the collection. | Understand knowledge flow inside the research area. |
+| Institution network | Institutions | Co-authored papers between institutions. |
+| Author network | Authors | Co-authored papers between authors. |
 
-In the internal citation network, an arrow starts from the citing paper and points to the cited paper. Clicking a node opens paper details and its cited / citing papers inside the collection.
+Controls include:
 
-### 10. Detail popups
+- maximum number of nodes;
+- minimum edge weight;
+- minimum paper count;
+- minimum average citations;
+- year range;
+- Topic filter;
+- funder filter;
+- node-size metric;
+- node-color metric.
 
-Clicking chart bars, scatter points, matrix cells, network nodes, or network edges opens a detail popup.
+Node labels are display names only. Raw IDs such as OpenAlex Author IDs or Institution IDs are not appended to visible names, but they are preserved internally and in CSV exports. Clicking a node or edge opens a detail popup with metrics and related papers.
 
-Related paper lists include:
+### 10. Citation Network: References
 
-- Title
-- Publication year
-- Citation count
-- DOI link
-- Authors
-- Institutions
-- Topic
+The Citation Network card uses `referenced_works` from OpenAlex.
 
-Popups also include copy-friendly summaries that can be pasted into reports or notes.
-
-### 11. Export and import
-
-| Function | Description |
+| Tab | Description |
 |---|---|
-| Paper CSV export | Exports retrieved paper data with v5.0 extended columns. |
-| Chart CSV export | Exports not only the displayed Top-N but, in principle, all relevant records. |
-| Matrix CSV export | Exports Topic x year, Topic x institution, Topic x funder, funder x institution, and other matrices. |
-| Network CSV export | Exports node CSV and edge CSV for institution and author networks. |
-| PNG export | Saves Chart.js charts as PNG. |
-| CSV upload | Reloads a previously saved CSV and resumes analysis without re-searching. |
+| Top referenced works | External works most cited by the retrieved collection. |
+| Top co-cited pairs | Pairs of references cited together by the same collection papers. |
+| Top bibliographic coupling pairs | Pairs of collection papers sharing many references. |
+| Internal citation network | Citation links among papers inside the retrieved collection. |
 
-HTML-table matrices and vis-network graphs are primarily exported as CSV rather than PNG.
+Reference coverage depends on publisher and field. Some papers may have no reference data.
 
----
+### 11. Detail popups
 
-## Topic score definition
+The tool uses modal popups across charts, rankings, matrices, and networks. Popups are designed for copy-and-paste inspection and usually include:
 
-Emerging Topic candidates are scored using yearly data inside the current collection.
+- entity name and type;
+- paper count;
+- total and average citations;
+- h-index where applicable;
+- related Topics, authors, institutions, funders, or references;
+- paper lists;
+- DOI and OpenAlex links where available;
+- copy-ready summaries.
 
-```text
-Score =
-  w_recent   x recent 3-year count
-+ w_delta    x (recent 3-year count - previous 3-year count)
-+ w_citation x recent 3-year average citations
-```
+### 12. Export / import
 
-Default weights are:
-
-| Weight | Default | Meaning |
-|---|---:|---|
-| `w_recent` | 1.0 | Emphasis on volume in the recent 3-year period. |
-| `w_delta` | 1.0 | Emphasis on increase from the previous 3-year period. |
-| `w_citation` | 1.0 | Emphasis on citation impact of recent papers. |
-
-The recent 3-year and previous 3-year windows are set automatically based on the maximum publication year in the current collection.
-
-```text
-Maximum publication year = Y
-Recent 3 years           = Y-2, Y-1, Y
-Previous 3 years         = Y-5, Y-4, Y-3
-```
-
-This score is an exploratory relative indicator. It should be used to rank candidate Topics within the same collection, not as an absolute cross-field metric.
-
----
-
-## Network metric definitions
-
-| Metric | Definition | Interpretation |
-|---|---|---|
-| Degree | Number of connected neighboring nodes. | Breadth of collaborators or coauthors. |
-| Weighted degree | Sum of connected edge weights. | Total collaboration or coauthorship volume. |
-| Betweenness centrality | Frequency of appearing on shortest paths. | Brokerage between clusters. |
-| Paper count | Number of papers related to the node. | Output volume. |
-| Average citations | Average citation count of papers related to the node. | Rough impact or quality proxy. |
-
-Betweenness centrality is useful for finding authors or institutions that bridge multiple research communities.
-
----
-
-## CSV output columns
-
-The paper CSV outputs the following columns in v5.0:
-
-```text
-paper_id
-title
-abstract
-year
-authors
-institutions
-venue
-citation_count
-publication_date
-doi
-language
-title_script
-primary_topic
-topics
-referenced_works_count
-referenced_works
-collector_query
-collector_candidate_query
-collector_match
-collector_match_field
-collector_match_operator
-collector_match_distance
-collector_match_snippet
-funder_names
-funder_ids
-award_ids
-funding_sources
-crossref_funder_names
-crossref_award_ids
-nih_project_nums
-nih_award_amounts
-nih_fiscal_years
-nih_orgs
-nih_pis
-nih_project_titles
-```
-
-Main added columns are:
-
-| Column | Description |
+| Output | Description |
 |---|---|
-| `primary_topic` | Representative Topic in OpenAlex. |
-| `topics` | Related Topics in OpenAlex. |
-| `referenced_works` | OpenAlex Work IDs cited by the paper. |
-| `collector_query` | Collector search expression used for the search. |
-| `collector_candidate_query` | Candidate-retrieval query sent to OpenAlex. |
-| `collector_match` | Result of Collector internal evaluation: `true` or `candidate_only`. |
-| `collector_match_field` | Matched field, such as title or abstract. |
-| `collector_match_operator` | Matched operator, such as `near5`, `adj3`, or `AND`. |
-| `collector_match_distance` | Word distance for a near/adj match. |
-| `collector_match_snippet` | Context around the matched location. |
-| `funder_names` | Funder names from OpenAlex / Crossref / NIH RePORTER. |
-| `award_ids` | Award IDs or grant numbers from OpenAlex / Crossref / NIH RePORTER. |
-| `funding_sources` | Source of funding information, such as OpenAlex, Crossref, NIH RePORTER, or CSV. |
-| `nih_*` | Project information enriched through NIH RePORTER. |
+| Paper CSV | Full paper table with identity, funding, Topic, and reference columns. |
+| Chart CSV | Aggregated values used in each chart. |
+| Matrix CSV | Topic, funding, collaboration, and citation matrices. |
+| Network CSV | Node and edge tables for institution and author networks. |
+| PNG | Chart image export. |
+| Identity-map JSON | Author and institution merge rules. |
+
+Previously exported CSV files can be reloaded through the upload card. If an older CSV lacks v6.0 columns, the tool fills missing values where possible.
 
 ---
 
-## Search syntax
+## Command-line query syntax
 
-### Search modes
-
-| Mode | Description |
-|---|---|
-| Command-line search expression | Define numbered command rows such as `#01`, `#02`, and combine them as `T=(#01 AND #02) OR #03`. OpenAlex retrieves candidates, then Collector strictly evaluates `TI` / `AB` / `TA`. |
-| Standard OpenAlex search | Sends the entered search terms directly to OpenAlex. |
-
-### Basic command-line search expression
+Command-line query mode uses two layers: command rows and a final T expression.
 
 ```text
 #01  TI=(solid adj3 electrolyte)
@@ -457,197 +350,167 @@ Main added columns are:
 T=(#01 AND #02) AND NOT #03
 ```
 
-Each command row is one search condition. Row numbers are assigned automatically in the UI. `#1` and `#01` refer to the same row. When multiple rows are used, enter the combined logical expression `T`. If only one row is entered and the T expression is blank, it is automatically treated as `T=(#01)`.
-
 ### Fields
 
-| Field | Target | Strict internal evaluation |
-|---|---|---:|
-| `TI` | Title | Supported |
-| `AB` | Abstract | Supported |
-| `TA` | Title + abstract | Supported. near/adj does not cross the title-abstract boundary; it is evaluated within title or within abstract. |
-| `TX` | OpenAlex general search target | Mainly candidate retrieval |
-| `FT` | OpenAlex fulltext index | Mainly candidate retrieval |
-
-In command-line search-expression mode, each row must explicitly contain one of `TI=` / `AB=` / `TA=` / `TX=` / `FT=`. A row without a field specification is a syntax error.
-
-### Advanced Filter "Search scope"
-
-In command-line search-expression mode, the Advanced Filter **Search scope** control is grayed out and cannot be clicked. Search scope is specified by each command row through `TI=` / `AB=` / `TA=` / `TX=` / `FT=`.
-
-| State | Handling of Advanced Filter "Search scope" |
+| Field | Meaning |
 |---|---|
-| Command-line search-expression mode | Disabled. Uses field specifications in each command row. |
-| Standard OpenAlex search mode | Enabled. Applies to the entire entered search term. "Maximum width within proximity groups" and "OR split limit" are hidden. |
+| `TI` | Title |
+| `AB` | Abstract |
+| `TA` | Title + abstract |
+| `TX` | OpenAlex general search target; mainly used for candidate retrieval. |
+| `FT` | OpenAlex full-text index; mainly used for candidate retrieval. |
 
-For OpenAlex candidate retrieval, if all fielded expressions use the same field, that scope is used. If `TI` / `AB` / `TA` are mixed, the candidate search is formed broadly around title and abstract, and Collector then strictly evaluates each field condition internally. If `TX` / `FT` are mixed, the candidate set is broadened further.
+### Operators
 
-### Boolean operators
+For ordinary `TI` / `AB` / `TA` keyword, Boolean, or wildcard searches, the tool accepts the OpenAlex candidate set directly. Internal distance filtering is applied only when `nearN` or `adjN` is used in `TI`, `AB`, or `TA`; `TX` and `FT` remain candidate-retrieval fields because the browser does not hold full-text content.
 
-```text
-A AND B
-A OR B
-NOT A
-```
-
-Uppercase operators are recommended. Lowercase operators are also interpreted.
-
-### Proximity search
-
-```text
-A near5 B
-A adj3 B
-```
 
 | Operator | Meaning |
 |---|---|
-| `nearN` | Within N words in any order. |
-| `adjN` | The left term appears before the right term within N words. |
+| `AND` | Both conditions must match. |
+| `OR` | Either condition may match. |
+| `NOT` | Exclude matching records. |
+| `nearN` | Unordered proximity within N words. |
+| `adjN` | Ordered proximity: left term before right term within N words. |
+| `*` | Wildcard for zero or more characters. |
+| `?` | Wildcard for one character. |
 
-The left and right sides may contain terms, phrases, wildcards, or Boolean groups.
 
-```text
-TA=((sulfide OR oxide OR polymer) near5 electrolyte)
-AB=((degradation AND capacity) near8 (mechanism OR fade*))
+---
+
+## Disambiguation-map JSON format
+
+The identity map stores user-defined merge rules. A simplified example is shown below.
+
+```json
+{
+  "author": {
+    "https://openalex.org/A111": "https://openalex.org/A999",
+    "name:akira-yoshino": "https://openalex.org/A999"
+  },
+  "institution": {
+    "https://openalex.org/I111": "https://openalex.org/I999",
+    "ror:https://ror.org/12345": "https://openalex.org/I999"
+  }
+}
 ```
 
-### Phrases and wildcards
+The left side is a source key. The right side is the canonical target key. The GUI is the recommended way to create and edit this map.
+
+---
+
+## Topic score definition
+
+The Emerging Topics tab uses a simple configurable score:
 
 ```text
-"solid electrolyte"
-cathod*
-wom?n
+Score = w_recent × recent_3_year_count
+      + w_delta × (recent_3_year_count - previous_3_year_count)
+      + w_citation × recent_3_year_average_citations
 ```
 
-| Syntax | Meaning |
-|---|---|
-| `"..."` | Exact consecutive phrase. |
-| `*` | Matches zero or more characters. |
-| `?` | Matches one character. |
-
-Leading wildcards such as `*electrolyte` are not allowed. Wildcards inside quoted phrases are not supported.
-
-### OpenAlex candidate retrieval and internal filtering
-
-Command-line search expressions are not passed to OpenAlex as-is. Collector first converts proximity conditions into broader Boolean candidate queries, retrieves candidate papers from OpenAlex, and then strictly evaluates `TI` / `AB` / `TA` internally.
-
-The UI button **Syntax check / OpenAlex candidate query preview** shows command rows, the T expression, the expanded Collector expression, OpenAlex candidate queries, and the candidate-retrieval scope.
+The weights can be changed in the UI. The goal is exploratory ranking, not statistical forecasting.
 
 ---
 
-## Use-case guide
+## Network metrics
 
-### Find growing subthemes
+Network Map nodes and edges include the following metrics.
 
-1. Search the target research area.
-2. Open **Topic Intelligence -> Topic x year** to check major Topic trends.
-3. Open **Topic Intelligence -> Emerging Topic candidates** to review recent growth and citation impact.
-4. Adjust weights if needed to compare volume-oriented, growth-oriented, and citation-oriented rankings.
-5. Click Topics of interest to inspect related papers, authors, and institutions.
-
-### See which themes a funder supports
-
-1. Search the target area.
-2. Run **Funding Intelligence -> External enrichment** if needed.
-3. Review **Topic Intelligence -> Topic x funder** or **Topic x funder matrix**.
-4. Review **Funding Intelligence -> Funder x institution matrix** to see relationships between funders and major institutions.
-
-### Find collaboration or coauthorship hubs
-
-1. Search the target area.
-2. Open **Network graphs -> Institution network** or **Author network**.
-3. Set node color to **Betweenness centrality**.
-4. Filter by Topic, funder, or year range if needed.
-5. Click large or high-betweenness nodes to inspect related papers.
-
-### Find foundational references or research streams
-
-1. Search the target area.
-2. Open **Citation network -> Cited references Top-N** to identify frequently cited external works.
-3. Open **Co-citation pairs Top-N** to find pairs cited together.
-4. Open **Bibliographic coupling Top-N** to find closely related papers within the collection.
-
-### Compare strong themes across companies, universities, or research institutes
-
-1. Search the target area.
-2. Open **Topic Intelligence -> Topic x institution**.
-3. Use **Topic x institution matrix** to overview the distribution of themes and institutions.
-4. Use **Citation rankings -> Count x average citations** to compare output volume and citation impact.
+| Metric | Description |
+|---|---|
+| Paper count | Number of papers associated with the node or edge. |
+| Citation count | Total citations of related papers. |
+| Average citations | Mean citation count of related papers. |
+| Degree | Number of connected partners. |
+| Weighted degree | Sum of edge weights connected to the node. |
+| Betweenness centrality | Approximate brokerage position in the network. |
+| Edge weight | Number of co-authored or jointly affiliated papers connecting two nodes. |
 
 ---
 
-## Technical specifications
+## CSV output
 
-| Item | Description |
-|---|---|
-| Format | Single HTML file. |
-| Front end | HTML / CSS / JavaScript. |
-| Chart rendering | Chart.js v4. |
-| Network rendering | vis-network v9. |
-| Heatmap | HTML table. |
-| APIs | OpenAlex REST API, Crossref REST API, NIH RePORTER API. |
-| External API registration | Only registration-free APIs are used in v5.0. |
-| OpenAlex API key field | Not implemented. |
-| CSV | UTF-8 BOM format, convenient for Excel. |
-| Retry | Exponential backoff for 429 and related API errors. |
-| CSV reload | Supports v5.0 extended CSV and older CSV files. |
+The paper CSV includes standard bibliographic columns plus v6.0 extensions.
 
-### JavaScript modules
+Common columns include:
 
-| Module | Role |
-|---|---|
-| `AppState` | Application-level state management. |
-| `OpenAlexAPI` | OpenAlex API client, search, author/institution resolution, and metadata transformation. |
-| `CollectorQuery` | Parser for Collector search syntax, OpenAlex candidate-query generation, TI/AB/TA internal filtering, and snippet generation. |
-| `SearchController` | Search execution, progress display, and result rendering. |
-| `TableRenderer` | Data table, sorting, and pagination. |
-| `ChartRenderer` | Count, citation, collaboration, and reference-network charts. |
-| `FundingRenderer` | Funding Intelligence aggregation, rendering, and external enrichment integration. |
-| `TopicRenderer` | Topic Intelligence, Topic scoring, and matrix rendering. |
-| `NetworkRenderer` | Institution and author networks, centrality calculation, and filters. |
-| `FundingAPI` | Crossref / NIH RePORTER API client. |
-| `Exporter` | CSV / PNG output. |
-| `Importer` | CSV import. |
-| `Modal` | Detail popups. |
-| `UIController` | Tabs, toast notifications, and progress display. |
+- `paper_id`
+- `title`
+- `year`
+- `authors`
+- `institutions`
+- `venue`
+- `doi`
+- `citation_count`
+- `abstract`
+- `topics`
+- `primary_topic`
+- `funders`
+- `awards`
+- `referenced_works`
+
+Identity-related columns include:
+
+- `author_ids`
+- `author_orcids`
+- `institution_ids`
+- `institution_rors`
+- `author_identity_keys`
+- `author_identity_labels`
+- `institution_identity_keys`
+- `institution_identity_labels`
+- `author_entities_json`
+- `institution_entities_json`
+
+Network node/edge CSV exports include both display names and internal keys so that labels remain readable while IDs remain available for downstream processing.
 
 ---
 
-## Notes
+## External APIs
 
-- Topic analysis depends on OpenAlex `primary_topic` / `topics`. Papers without Topic metadata are excluded from Topic aggregation.
-- Funding analysis is based primarily on OpenAlex funding metadata. A blank funding field does not necessarily mean that the paper had no funding.
-- Crossref enrichment retrieves DOI-based metadata sequentially and is not suitable for very large batch retrieval.
-- NIH RePORTER enrichment is useful when NIH-style award numbers are present.
-- Direct API integration for KAKEN / JST / AMED is not included as a standard v5.0 feature.
-- Emerging Topic scores are exploratory relative indicators and should not be used for absolute cross-field comparison.
-- Network betweenness centrality is calculated within the current search collection and filter conditions.
-- h-index is a simplified metric calculated within the current collection.
-- OpenAlex reference coverage varies by publisher and field.
-- Chart.js and vis-network are loaded from CDNs. In offline environments, graph rendering may not work.
-- Because the browser calls external APIs directly, enrichment may fail due to CORS settings, rate limits, or API-side instability.
+The tool is centered on OpenAlex. Optional enrichment may also use public endpoints.
+
+| API | Use |
+|---|---|
+| OpenAlex API | Paper retrieval, metadata, authors, institutions, Topics, funders, references. |
+| Crossref REST API | Optional DOI-based funding enrichment. |
+| NIH RePORTER API | Optional grant/award enrichment where relevant. |
+
+No OpenAlex API key field is implemented in v6.0. Semantic Scholar is not used.
 
 ---
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Action |
-|---|---|---|
-| Too few search results | Filters are too restrictive: abstract-only, English-only, minimum citations, or Collector internal proximity filtering. | Loosen advanced filters. In command-line mode, increase `nearN` distance or maximum proximity-group width. |
-| Collector syntax error | Missing closing parenthesis or quote, leading wildcard, or wildcard inside a quoted phrase. | Use **Syntax check / OpenAlex candidate query preview** to inspect the error. |
-| No Topic-analysis data | OpenAlex has no Topic metadata for the papers, or the CSV has no Topic columns. | Run a new search or use a v5.0 CSV. |
-| No Funding-analysis data | Papers do not contain funding metadata. | Try Crossref enrichment. If NIH-style numbers are present, run NIH enrichment. |
-| Network graph is empty | Minimum edge weight, minimum papers, or Topic/funder filters are too strict. | Lower thresholds and clear filters. |
-| Matrix is hard to read | Too many rows or columns are shown. | Reduce the number of Topics, funders, or institutions. |
-| PNG export is unavailable | HTML-table matrices and vis-network graphs are not PNG-export targets. | Use CSV export. |
-| External enrichment fails | CORS, rate limits, or unstable API responses. | Lower the retrieval limit and retry later. |
+| Symptom | Possible cause and remedy |
+|---|---|
+| No papers are retrieved | Check the command syntax, year range, institution/author filters, and whether the query is too restrictive. Use the syntax preview before running. |
+| Too many papers are retrieved | Add field-specific conditions, year constraints, institution filters, or minimum citation filters. |
+| Search scope is disabled | This is expected in command-line query mode. Use `TI=`, `AB=`, `TA=`, `TX=`, or `FT=` inside command rows. |
+| Name-only authors or institutions appear | OpenAlex did not provide stable IDs for those entities. Review them in the disambiguation workbench. |
+| Parent institution grouping creates unexpected labels | The tool only aggregates to parents with retrievable names. If needed, use exact-ID aggregation or the GUI merge map. |
+| Funding enrichment is incomplete | External APIs may not have data for the DOI/award or may be blocked by rate limits/CORS behavior. |
+| Reference analysis is sparse | OpenAlex reference coverage varies by publisher, year, and field. |
+| Browser becomes slow | Reduce maximum records, Top-N values, network node counts, or matrix dimensions. In the disambiguation workbench, use the 50-row limit, filter to same-name or merged records, and sort by name so same-name candidates stay adjacent with less rendering overhead. |
+| CSV import lacks some columns | Older CSV files may not contain all v6.0 columns. The tool fills missing values where possible. |
+
+---
+
+## Notes and limitations
+
+- OpenAlex metadata quality varies by publisher, field, and publication year.
+- Abstracts and references may be unavailable for some records.
+- Disambiguation suggestions are aids for analysis; final merge decisions should be made by the user.
+- The tool runs entirely in the browser, so very large collections may be limited by browser memory and rendering performance.
+- For very large identity workbenches, use the 50-row limit, filter to same-name or merged records, and sort by name to review candidates with less rendering overhead.
+- Citation counts are OpenAlex citation counts and may differ from other databases.
+- Network metrics are calculated within the retrieved collection, not the entire scholarly literature.
 
 ---
 
 ## License
 
-MIT License
+MIT License.
 
----
-
-© 2026 Shibayama
+©︎2026 Shibayama
