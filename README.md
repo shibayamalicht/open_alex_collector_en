@@ -1,6 +1,6 @@
-# OpenALEX Collector v7
+# OpenALEX Collector v7.1
 
-OpenALEX Collector v7 is a single-file, browser-based tool for collecting and analyzing scholarly paper metadata with the OpenAlex API. It supports paper retrieval, Topic intelligence, funding intelligence, citation analysis, collaboration/co-authorship networks, author and institution disambiguation, technical-keyword extraction, must-read paper triage, technology-lineage visualization, and prompt generation for AI-assisted analytical reports.
+OpenALEX Collector v7.1 is a single-file, browser-based tool for collecting and analyzing scholarly paper metadata with the OpenAlex API. It supports paper retrieval, Topic intelligence, funding intelligence, citation analysis, collaboration/co-authorship networks, author and institution disambiguation, technical-keyword extraction, must-read paper triage, technology-lineage visualization, journal intelligence, and prompt generation for AI-assisted analytical reports.
 
 No server setup is required. Open `OpenALEX_Collector_en.html` in a browser and start searching. The tool itself does not call external AI APIs such as OpenAI, Anthropic, or Google. When you want to use AI, the tool generates prompts, you review and manually paste them into an external AI system, and then paste TSV results back into Collector.
 
@@ -9,7 +9,7 @@ No server setup is required. Open `OpenALEX_Collector_en.html` in a browser and 
 > Every paper stands on someone's shoulders.
 
 ![Powered by OpenAlex API](https://img.shields.io/badge/Powered%20by-OpenAlex%20API-1a73e8)
-![Version](https://img.shields.io/badge/version-v7-1a73e8)
+![Version](https://img.shields.io/badge/version-v7.1-1a73e8)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
@@ -18,6 +18,7 @@ No server setup is required. Open `OpenALEX_Collector_en.html` in a browser and 
 
 - [Overview](#overview)
 - [Design principles](#design-principles)
+- [Changelog](#changelog)
 - [Major changes from v6.0 to v7](#major-changes-from-v60-to-v7)
 - [Quick start](#quick-start)
 - [Typical workflow](#typical-workflow)
@@ -108,6 +109,24 @@ The AI-assistance features in v7 do not run AI inference inside Collector. Colle
 | Cache separation | Performance caches and user-defined disambiguation maps are separated. Saved maps are used only when explicitly loaded or stored for a dataset. |
 | OpenAlex API key (free, required) | As of February 13, 2026 the OpenAlex API requires an API key (see [Quick start](#quick-start)). Set a free key on the in-app "OpenAlex API Key" screen. External enrichment via Crossref REST API and NIH RePORTER API is registration-free. No AI API key field is provided (prompt-generation + TSV paste-back). |
 | CSV reuse | Saved CSV files can be imported to continue analysis. v7 includes AI annotation columns, Topic-label columns, and disambiguation-related columns. |
+
+---
+
+## Changelog
+
+### v7.1 (performance fix)
+
+v7.1 is functionally identical to v7; it is a **performance release that fixes freezes on large datasets (tens of thousands of papers).**
+
+- **Removed an O(N²) in the "Technical Keywords & AI Annotations" card**: the overview-memo generation (`renderOverview`) that runs when you switch to the "B. AI prompt generation" tab and when you run "C. paste back AI results" was recomputing the min/max publication year across *all* papers once *per paper* (effectively N×N). It now computes them once. This removes the multi-second / freeze-level wait seen at tens of thousands of papers (the affected step dropped from ~640 ms to ~5 ms at 10,000 papers).
+- **Lighter re-render after pasting back AI results**: instead of unconditionally re-rendering every card (Topic intelligence, technology lineage, etc.) on each paste-back, it now **updates only the currently open card immediately and marks the others to re-render the next time they are opened** (using the existing lazy-render mechanism). Paste-back feels much lighter (~1,300 ms → ~250 ms at 10,000 papers).
+- **Fixed a freeze when uploading a saved CSV**: during CSV import, author/institution disambiguation labeling (`applyIdentityLabels`) was running **twice**, and it rebuilt author/institution data once per paper. We (1) removed the duplicate run and (2) reuse a per-dataset cache of the disambiguated entities. CSV import now takes roughly half the time (~2,380 ms → ~1,050 ms at 5,000 papers, with a larger gain at tens of thousands). The disambiguation results are verified to be identical to before.
+- **Fixed crashes on large CSVs (tens to hundreds of MB) — memory-efficient CSV parser**: the old `parseCSV` had two serious memory problems. (1) It concatenated the text one character at a time (`current += ch`), causing massive string reallocation on big files. (2) It first held every line in an intermediate `lines[]` array and then re-parsed it, stacking up arrays roughly the size of the original text two or three times over. As a result it used about **5× the CSV file size** in memory, and at ~150 MB it exceeded the browser's JS heap limit (~4 GB) and **crashed the tab**. The new implementation slices fields with substring and builds one row object at a time, **without keeping a giant intermediate array.**
+  - **Impact (measured)**: post-parse memory growth is about **1/3.5** (a 12 MB CSV went from +46 MB to +13 MB) and parsing is about **3.4× faster** (618 ms → 182 ms for the same file). As a result, **150 MB-class CSVs that used to crash now load** (the practical file-size ceiling is greatly raised).
+  - **Bonus bug fix**: the old parser mis-split commas inside quoted fields (e.g. `"Smith, J."` was broken into two columns). The new parser handles quoting per RFC 4180. An export → import round-trip preserves all columns exactly, including commas, quotes, and embedded JSON.
+- **Progress indicator during CSV upload**: while a large CSV is loading, a spinner overlay ("Loading CSV...") is shown and is dismissed automatically when done. The indicator is painted to the screen before the load begins, so "busy" is reliably visible even for heavy synchronous work.
+
+> Results and displayed content are identical to v7; only speed and memory efficiency improve (the only behavioral change is the CSV quoting bug fix, which makes results more correct). After a paste-back, opening the Topic or technology-lineage card renders it with the latest annotations applied at that moment.
 
 ---
 
